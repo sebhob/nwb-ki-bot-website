@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NWB KI Bildungs-Bot — Dein Lernbegleiter fürs Steuer­recht (Prototyp)</title>
+<meta name="description" content="Prototyp eines KI-Lernbegleiters für steuerliche Prüfungen – Steuerfachangestellte, Steuerfachwirt und Steuerberaterprüfung. Antworten mit Quelle, adaptive Lernpläne und Prüfungssimulation, rund um die Uhr." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15140F;
+    --ink-2:#534E40;
+    --paper:#FAF8F0;
+    --paper-2:#F2EEDF;
+    --yellow:#FEED00;
+    --yellow-deep:#E7D500;
+    --night:#17160F;
+    --night-2:#211F15;
+    --mark:rgba(254,237,0,.50);
+    --maxw:1160px;
+    --r:18px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;font-family:'Open Sans',system-ui,sans-serif;color:var(--ink);
+    background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.45;
+    background-image:radial-gradient(rgba(21,20,15,.035) 1px,transparent 1px);background-size:3px 3px;
+  }
+  a{color:inherit;text-decoration:none;}
+  h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+  p{margin:0;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;text-transform:uppercase;
+    letter-spacing:.22em;color:var(--ink-2);display:inline-flex;align-items:center;gap:.6em;
+  }
+  .eyebrow::before{content:"§";color:var(--ink);font-weight:700;background:var(--yellow);
+    width:1.5em;height:1.5em;display:inline-grid;place-items:center;border-radius:5px;letter-spacing:0;}
+
+  .mark{position:relative;white-space:nowrap;z-index:0;}
+  .mark::after{content:"";position:absolute;left:-.08em;right:-.08em;bottom:.04em;height:.62em;
+    background:var(--mark);z-index:-1;transform:scaleX(0);transform-origin:left;
+    transition:transform .7s cubic-bezier(.5,.1,.1,1);border-radius:2px;}
+  .mark.lit::after{transform:scaleX(1);}
+
+  .btn{display:inline-flex;align-items:center;gap:.55em;cursor:pointer;border:none;font-family:inherit;
+    font-weight:700;font-size:1rem;border-radius:999px;padding:.85em 1.5em;
+    transition:transform .15s ease,box-shadow .2s ease,background .2s ease;}
+  .btn-primary{background:var(--ink);color:var(--paper);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(21,20,15,.22);}
+  .btn-yellow{background:var(--yellow);color:var(--ink);box-shadow:0 8px 22px rgba(231,213,0,.4);}
+  .btn-yellow:hover{transform:translateY(-2px);background:var(--yellow-deep);}
+  .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);}
+  .btn-ghost:hover{background:var(--ink);color:var(--paper);}
+  .btn .arr{transition:transform .2s ease;}
+  .btn:hover .arr{transform:translateX(3px);}
+
+  /* prototype banner */
+  .protobar{background:var(--ink);color:var(--paper);font-size:.82rem;text-align:center;
+    padding:.5em 16px;position:relative;z-index:60;}
+  .protobar b{color:var(--yellow);font-family:'JetBrains Mono',monospace;letter-spacing:.05em;}
+
+  /* HEADER */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(8px);
+    background:rgba(250,248,240,.82);border-bottom:1px solid transparent;transition:border-color .3s;}
+  header.scrolled{border-bottom:1px solid var(--paper-2);}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:70px;}
+  .brand{display:flex;align-items:center;gap:.7em;font-weight:800;letter-spacing:-.02em;font-size:1.05rem;}
+  .brand img{height:30px;width:auto;display:block;}
+  .brand .sub{font-weight:600;color:var(--ink-2);font-size:.72rem;letter-spacing:.02em;line-height:1.1;}
+  .proto-pill{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.12em;background:var(--yellow);color:var(--ink);border-radius:5px;padding:.25em .5em;
+    margin-left:.2em;border:1px solid var(--ink);}
+  .nav-links{display:flex;gap:1.8rem;align-items:center;font-size:.92rem;font-weight:600;}
+  .nav-links a{color:var(--ink-2);transition:color .2s;}
+  .nav-links a:hover{color:var(--ink);}
+  .nav .btn{padding:.55em 1.1em;font-size:.9rem;}
+  .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:6px;}
+  .menu-toggle span{display:block;width:24px;height:2px;background:var(--ink);margin:5px 0;transition:.3s;}
+
+  /* HERO */
+  .hero{padding:48px 0 40px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center;}
+  .hero h1{font-size:clamp(2.5rem,5.4vw,4.05rem);}
+  .hero .lede{margin-top:1.4rem;font-size:1.16rem;color:var(--ink-2);max-width:32ch;}
+  .hero-cta{margin-top:2.2rem;display:flex;gap:.9rem;flex-wrap:wrap;align-items:center;}
+  .hero-note{margin-top:1rem;font-size:.84rem;color:var(--ink-2);display:flex;align-items:center;gap:.5em;}
+  .hero-note .dotlive{width:8px;height:8px;border-radius:50%;background:var(--yellow-deep);box-shadow:0 0 0 3px rgba(231,213,0,.3);}
+  .hero-meta{margin-top:2rem;display:flex;gap:1.8rem;flex-wrap:wrap;}
+  .hero-meta div{display:flex;flex-direction:column;}
+  .hero-meta b{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;}
+  .hero-meta span{font-size:.78rem;color:var(--ink-2);font-weight:600;}
+
+  /* live demo card */
+  .demo{background:#fff;border:1px solid var(--paper-2);border-radius:var(--r);
+    box-shadow:0 30px 60px -28px rgba(21,20,15,.32);overflow:hidden;}
+  .demo-bar{display:flex;align-items:center;gap:.6em;padding:.85em 1.1em;border-bottom:1px solid var(--paper-2);background:var(--paper-2);}
+  .demo-bar .dot{width:10px;height:10px;border-radius:50%;background:#d8d2bf;}
+  .demo-bar .dot.y{background:var(--yellow);}
+  .demo-bar .title{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-2);letter-spacing:.05em;}
+  .demo-body{padding:1.15rem;min-height:340px;display:flex;flex-direction:column;}
+  .chips{display:flex;flex-wrap:wrap;gap:.5em;margin-bottom:1rem;}
+  .chip{font-size:.82rem;font-weight:600;border:1px solid var(--paper-2);background:var(--paper);
+    border-radius:999px;padding:.5em .9em;cursor:pointer;transition:.18s;color:var(--ink-2);}
+  .chip:hover{border-color:var(--ink);color:var(--ink);}
+  .chip.active{background:var(--yellow);border-color:var(--yellow);color:var(--ink);}
+  .stream{flex:1;display:flex;flex-direction:column;gap:.8rem;}
+  .bubble-q{align-self:flex-end;background:var(--ink);color:var(--paper);padding:.6em .95em;
+    border-radius:14px 14px 4px 14px;font-size:.92rem;max-width:85%;}
+  .bubble-a{align-self:flex-start;background:var(--paper-2);padding:.75em 1em;border-radius:14px 14px 14px 4px;
+    font-size:.93rem;max-width:94%;border:1px solid #e8e2d0;}
+  .bubble-a .ans{white-space:pre-wrap;}
+  .typing{display:inline-flex;gap:4px;padding:.3em 0;}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-2);animation:bounce 1.1s infinite;}
+  .typing i:nth-child(2){animation-delay:.15s;}
+  .typing i:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
+  .source{margin-top:.7em;display:flex;flex-wrap:wrap;gap:.45em;align-items:center;}
+  .source .lbl{font-family:'JetBrains Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-2);}
+  .src-chip{font-family:'JetBrains Mono',monospace;font-size:.74rem;background:#fff;border:1px solid var(--paper-2);
+    border-left:3px solid var(--yellow);border-radius:5px;padding:.3em .55em;display:inline-flex;align-items:center;gap:.4em;}
+  .src-chip::before{content:"↳";color:var(--yellow-deep);}
+
+  section{padding:84px 0;position:relative;}
+  .sec-head{max-width:48ch;margin-bottom:48px;}
+  .sec-head h2{font-size:clamp(1.9rem,3.6vw,2.85rem);margin-top:.6rem;}
+  .sec-head p{margin-top:1rem;color:var(--ink-2);font-size:1.08rem;}
+
+  /* PROBLEM */
+  .problem{background:var(--night);color:var(--paper);}
+  .problem .eyebrow{color:#bcb6a2;}
+  .problem .eyebrow::before{background:var(--yellow);color:var(--night);}
+  .problem h2{color:var(--paper);}
+  .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:8px;}
+  .pcard{background:var(--night-2);border:1px solid #322f22;border-radius:14px;padding:24px;}
+  .pcard .n{font-family:'JetBrains Mono',monospace;color:var(--yellow);font-size:.8rem;font-weight:700;}
+  .pcard h3{font-size:1.12rem;margin:.7rem 0 .5rem;color:var(--paper);}
+  .pcard p{color:#b7b2a1;font-size:.92rem;}
+  .pturn{margin-top:34px;font-size:1.25rem;font-weight:700;max-width:42ch;}
+  .pturn .mark::after{background:var(--yellow);opacity:.85;height:.5em;}
+
+  /* USP */
+  .usp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  .ucard{background:#fff;border:1px solid var(--paper-2);border-radius:16px;padding:30px 26px;transition:transform .25s ease,box-shadow .25s ease;}
+  .ucard:hover{transform:translateY(-5px);box-shadow:0 22px 40px -26px rgba(21,20,15,.3);}
+  .ucard .ic{width:48px;height:48px;border-radius:12px;background:var(--yellow);display:grid;place-items:center;margin-bottom:18px;font-weight:800;font-size:1.3rem;}
+  .ucard h3{font-size:1.2rem;margin-bottom:.5rem;}
+  .ucard p{color:var(--ink-2);font-size:.96rem;}
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:40px;}
+  .stat{flex:1;min-width:170px;background:var(--paper-2);border:1px solid #e8e2d0;border-radius:14px;padding:22px 24px;}
+  .stat b{display:block;font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1;}
+  .stat span{font-size:.86rem;color:var(--ink-2);font-weight:600;display:block;margin-top:.5rem;}
+
+  /* MODES */
+  .modes{background:var(--paper-2);}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px;}
+  .tab{font-weight:700;font-size:.96rem;padding:.7em 1.25em;border-radius:999px;border:1.5px solid #e3ddca;
+    background:#fff;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:.5em;}
+  .tab .tn{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-2);}
+  .tab:hover{border-color:var(--ink);}
+  .tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .tab.active .tn{color:var(--yellow);}
+  .panel{display:none;background:#fff;border:1px solid #e8e2d0;border-radius:20px;overflow:hidden;grid-template-columns:1fr 1fr;}
+  .panel.active{display:grid;animation:fade .4s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .panel-text{padding:42px;}
+  .panel-text .eyebrow{margin-bottom:1rem;}
+  .panel-text h3{font-size:1.7rem;margin-bottom:.8rem;}
+  .panel-text p{color:var(--ink-2);margin-bottom:1.3rem;}
+  .panel-text ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.6em;}
+  .panel-text li{padding-left:1.6em;position:relative;font-size:.96rem;}
+  .panel-text li::before{content:"✓";position:absolute;left:0;color:var(--ink);background:var(--yellow);
+    width:1.25em;height:1.25em;border-radius:50%;display:grid;place-items:center;font-size:.7em;font-weight:800;top:.2em;}
+  .panel-visual{background:var(--night);color:var(--paper);padding:42px;display:flex;flex-direction:column;justify-content:center;gap:14px;}
+
+  /* GALLERY */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .shot{background:#fff;border:1px solid var(--paper-2);border-radius:16px;overflow:hidden;
+    box-shadow:0 18px 40px -30px rgba(21,20,15,.4);transition:transform .25s;}
+  .shot:hover{transform:translateY(-5px);}
+  .shot .frame{aspect-ratio:16/10;background:var(--paper-2);position:relative;overflow:hidden;}
+  .shot .frame img{width:100%;height:100%;object-fit:cover;display:block;}
+  .shot .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.5em;color:var(--ink-2);text-align:center;padding:20px;
+    background:repeating-linear-gradient(135deg,var(--paper-2),var(--paper-2) 12px,#ece7d6 12px,#ece7d6 24px);}
+  .shot .ph .badge{font-family:'JetBrains Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;
+    background:var(--yellow);color:var(--ink);border-radius:5px;padding:.3em .6em;}
+  .shot .ph small{font-size:.78rem;max-width:24ch;}
+  .shot .cap{padding:16px 20px;}
+  .shot .cap h3{font-size:1.05rem;margin-bottom:.25rem;}
+  .shot .cap p{font-size:.85rem;color:var(--ink-2);}
+
+  /* PRÜFUNG / AVATARS */
+  .exam-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px;}
+  .ex{background:#fff;border:1px solid var(--paper-2);border-radius:16px;padding:26px;text-align:center;transition:transform .25s,box-shadow .25s;}
+  .ex:hover{transform:translateY(-5px);box-shadow:0 22px 40px -26px rgba(21,20,15,.3);}
+  .ex .face{width:88px;height:88px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;
+    font-size:1.9rem;font-weight:800;background:linear-gradient(150deg,var(--yellow),var(--yellow-deep));border:3px solid var(--ink);}
+  .ex h3{font-size:1.18rem;}
+  .ex .role{font-family:'JetBrains Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2);margin:.4rem 0 .8rem;}
+  .ex p{font-size:.9rem;color:var(--ink-2);}
+
+  /* PROGNOSE */
+  .prog{background:var(--night);color:var(--paper);}
+  .prog .eyebrow{color:#bcb6a2;}
+  .prog .eyebrow::before{background:var(--yellow);color:var(--night);}
+  .prog h2{color:var(--paper);}
+  .prog-wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+  .prog-controls .q{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#bcb6a2;text-transform:uppercase;letter-spacing:.12em;margin-bottom:1rem;}
+  .focus-btns{display:flex;flex-wrap:wrap;gap:10px;}
+  .fbtn{background:var(--night-2);border:1.5px solid #34311f;color:var(--paper);font-family:inherit;font-weight:600;
+    font-size:.92rem;padding:.65em 1.1em;border-radius:999px;cursor:pointer;transition:.2s;}
+  .fbtn:hover{border-color:var(--yellow);}
+  .fbtn.active{background:var(--yellow);color:var(--ink);border-color:var(--yellow);}
+  .gauge{background:var(--night-2);border:1px solid #322f22;border-radius:20px;padding:34px;text-align:center;}
+  .gauge .big{font-size:4.2rem;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--yellow);}
+  .gauge .ctx{color:#b7b2a1;font-size:.95rem;margin-top:.5rem;min-height:2.6em;}
+  .bar{height:12px;border-radius:999px;background:#34311f;margin:22px 0 6px;overflow:hidden;}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--yellow-deep),var(--yellow));border-radius:999px;transition:width 1s cubic-bezier(.5,.1,.1,1);}
+  .gauge small{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:#807c6e;letter-spacing:.05em;}
+
+  /* AUDIENCE */
+  .aud{background:#fff;border:1px solid var(--paper-2);border-radius:20px;padding:40px;
+    box-shadow:0 22px 50px -38px rgba(21,20,15,.35);}
+  .aud .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em;padding:.3em .7em;border-radius:5px;margin-bottom:1rem;background:var(--yellow);color:var(--ink);}
+  .aud h3{font-size:1.5rem;margin-bottom:1.2rem;}
+  .aud ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:.6em;}
+  .aud li{font-size:.95rem;font-weight:600;background:var(--paper-2);border:1px solid #e8e2d0;border-radius:10px;padding:.55em .95em;}
+  .aud .foot{margin-top:1.4rem;font-size:.92rem;color:var(--ink-2);max-width:60ch;}
+
+  /* DIDAKTIK */
+  .did-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .dcard{border-left:3px solid var(--yellow);padding:6px 0 6px 20px;}
+  .dcard h3{font-size:1.05rem;margin-bottom:.4rem;}
+  .dcard p{font-size:.9rem;color:var(--ink-2);}
+
+  /* TRUST */
+  .trust{background:var(--ink);color:var(--paper);border-radius:24px;padding:48px;margin:0 24px;}
+  .trust-inner{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:1.2fr 2fr;gap:40px;align-items:center;}
+  .trust h2{color:var(--paper);font-size:2rem;}
+  .trust .eyebrow{color:#bcb6a2;}
+  .trust .eyebrow::before{background:var(--yellow);color:var(--ink);}
+  .badges{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .badge{background:var(--night-2);border:1px solid #322f22;border-radius:12px;padding:18px 20px;}
+  .badge b{display:block;font-size:1rem;margin-bottom:.2rem;}
+  .badge span{color:#b7b2a1;font-size:.84rem;}
+
+  /* FINAL */
+  .final{text-align:center;}
+  .final-box{background:var(--yellow);border-radius:28px;padding:64px 32px;position:relative;overflow:hidden;}
+  .final-box::before,.final-box::after{content:"§";position:absolute;font-size:13rem;font-weight:800;color:rgba(21,20,15,.07);line-height:1;}
+  .final-box::before{top:-20px;left:20px;}
+  .final-box::after{bottom:-60px;right:30px;}
+  .final-box h2{font-size:clamp(2rem,4.5vw,3rem);max-width:20ch;margin:0 auto;position:relative;}
+  .final-box p{margin:1.2rem auto 2rem;max-width:44ch;color:#3a3725;font-weight:500;position:relative;}
+  .final-box .btn{position:relative;}
+  .final-box .smallnote{margin-top:1.1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#5a5638;}
+
+  /* FOOTER */
+  footer{padding:56px 0 40px;border-top:1px solid var(--paper-2);margin-top:84px;}
+  .foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start;}
+  .foot .brand{margin-bottom:.8rem;}
+  .foot p{color:var(--ink-2);font-size:.88rem;max-width:34ch;}
+  .foot-links{display:flex;gap:40px;flex-wrap:wrap;}
+  .foot-col h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2);margin-bottom:1rem;}
+  .foot-col a{display:block;font-size:.92rem;color:var(--ink);margin-bottom:.6rem;font-weight:600;opacity:.8;}
+  .foot-col a:hover{opacity:1;}
+  .legal{margin-top:40px;padding-top:24px;border-top:1px solid var(--paper-2);font-size:.8rem;color:var(--ink-2);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in{opacity:1;transform:none;}
+  :focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:6px;}
+
+  @media (max-width:900px){
+    .hero-grid,.prog-wrap,.trust-inner{grid-template-columns:1fr;gap:40px;}
+    .pgrid,.usp-grid,.did-grid,.exam-grid,.gallery{grid-template-columns:repeat(2,1fr);}
+    .panel.active{grid-template-columns:1fr;}
+    .panel-visual{order:-1;}
+    .nav-links{display:none;}
+    .menu-toggle{display:block;}
+    .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;flex-direction:column;
+      background:var(--paper);padding:20px 24px;border-bottom:1px solid var(--paper-2);gap:1rem;}
+  }
+  @media (max-width:560px){
+    .pgrid,.usp-grid,.did-grid,.exam-grid,.gallery{grid-template-columns:1fr;}
+    .hero{padding:32px 0 20px;}
+    section{padding:60px 0;}
+    .trust{margin:0 16px;padding:32px;}
+    .final-box{padding:44px 24px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto;}
+    .reveal{opacity:1;transform:none;}
+    .mark::after{transform:scaleX(1);}
+  }
+</style>
+</head>
+<body>
+
+<!-- PROTOTYPE NOTICE -->
+<div class="protobar">
+  <b>PROTOTYP</b> &nbsp;·&nbsp; Diese Seite stellt einen Prototyp vor. Funktionen und Inhalte werden laufend weiterentwickelt.
+</div>
+
+<!-- HEADER -->
+<header id="hdr">
+  <div class="wrap nav">
+    <a href="#top" class="brand">
+      <img src="assets/nwb-logo.svg" alt="NWB" />
+      <span class="sub">KI Bildungs-Bot<br>Lernbegleiter</span>
+      <span class="proto-pill">Prototyp</span>
+    </a>
+    <nav class="nav-links" id="navlinks">
+      <a href="#modi">Modi</a>
+      <a href="#einblicke">Einblicke</a>
+      <a href="#pruefung">Prüfungssimulation</a>
+      <a href="#zielgruppe">Für wen</a>
+      <a href="https://nwb-ki-bot.vercel.app" target="_blank" rel="noopener" class="btn btn-yellow">Prototyp öffnen <span class="arr">→</span></a>
+    </nav>
+    <button class="menu-toggle" id="mt" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Aus- & Weiterbildung · Steuerrecht</span>
+      <h1 style="margin-top:1.2rem;">Jede Antwort mit <span class="mark" data-mark>Quelle</span>.<br>Jeder Tag mit <span class="mark" data-mark>Plan</span>.</h1>
+      <p class="lede">Der KI-Lernbegleiter, der steuerrechtliche Fragen belegbar beantwortet, dich prüfungsnah trainiert und dich bis zum Prüfungstag strukturiert begleitet — rund um die Uhr.</p>
+      <div class="hero-cta">
+        <a href="https://nwb-ki-bot.vercel.app" target="_blank" rel="noopener" class="btn btn-primary">Prototyp öffnen <span class="arr">→</span></a>
+        <a href="#start" class="btn btn-ghost">Live-Demo ansehen</a>
+      </div>
+      <div class="hero-note"><span class="dotlive"></span> Du wirst zum Login des Prototyps weitergeleitet.</div>
+      <div class="hero-meta">
+        <div><b>Mit&nbsp;Quelle</b><span>bei jeder Antwort</span></div>
+        <div><b>&gt;&nbsp;95&nbsp;%</b><span>Quellenabdeckung</span></div>
+        <div><b>24/7</b><span>verfügbar</span></div>
+      </div>
+    </div>
+
+    <!-- LIVE DEMO -->
+    <div class="demo reveal" id="start">
+      <div class="demo-bar">
+        <span class="dot y"></span><span class="dot"></span><span class="dot"></span>
+        <span class="title">NWB&nbsp;KI&nbsp;·&nbsp;Fach-Tutor&nbsp;·&nbsp;Demo</span>
+      </div>
+      <div class="demo-body">
+        <div class="chips" id="chips"></div>
+        <div class="stream" id="stream">
+          <div class="bubble-a" style="border-style:dashed;">Stell mir eine steuerrechtliche Frage — tippe oben auf ein Beispiel. Du bekommst eine kurze Antwort und die genaue Fundstelle dazu. <em>(Beispielhafte Demo des Prototyps.)</em></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Die Ausgangslage</span>
+      <h2>Lernen für die Prüfung ist hart genug.</h2>
+    </div>
+    <div class="pgrid">
+      <div class="pcard reveal"><div class="n">01</div><h3>Allein gelassen</h3><p>Lernen oft ohne Kommilitonen oder Tutor — Fragen bleiben tagelang offen.</p></div>
+      <div class="pcard reveal"><div class="n">02</div><h3>Akuter Zeitmangel</h3><p>Vollzeitjob und Vorbereitung gleichzeitig. Jede Lernstunde muss sitzen.</p></div>
+      <div class="pcard reveal"><div class="n">03</div><h3>Stoff in Bewegung</h3><p>Ständige Gesetzesänderungen, riesige Materialmengen, schwer verständlich.</p></div>
+      <div class="pcard reveal"><div class="n">04</div><h3>Struktur verloren</h3><p>Über Monate kippen Plan und Motivation — der rote Faden fehlt.</p></div>
+    </div>
+    <p class="pturn reveal">Der NWB KI Bildungs-Bot setzt genau hier an: <span class="mark" data-mark>fachlich präzise</span>, persönlich begleitend und jederzeit erreichbar.</p>
+  </div>
+</section>
+
+<!-- USP -->
+<section id="usp">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Warum dieser Bot anders ist</span>
+      <h2>Belegbar statt erfunden.</h2>
+      <p>Andere Chatbots klingen sicher und liegen daneben. Der NWB KI Bildungs-Bot greift bei jeder Antwort gezielt auf geprüfte NWB-Inhalte zu — und nennt die Fundstelle.</p>
+    </div>
+    <div class="usp-grid">
+      <div class="ucard reveal"><div class="ic">↳</div><h3>Antworten mit Quelle</h3><p>RAG-Technologie zieht die Antwort direkt aus der NWB-Datenbank — mit Verweis auf Gesetz, Kommentar oder Fachbuch. Keine erfundenen Fundstellen.</p></div>
+      <div class="ucard reveal"><div class="ic">◐</div><h3>Adaptiv & persönlich</h3><p>Der Bot erkennt deine Top-Wissenslücken und baut daraus Lernpfade, die sich mit deinem Fortschritt verändern.</p></div>
+      <div class="ucard reveal"><div class="ic">⊞</div><h3>Vier Modi, ein Begleiter</h3><p>Fragen klären, drillen, planen, Prüfung simulieren — alles an einem Ort, vom Einstieg bis zur Prüfung.</p></div>
+      <div class="ucard reveal"><div class="ic">⚲</div><h3>DSGVO & EU-Hosting</h3><p>Hosting ausschließlich in der EU, verschlüsselt, ohne biometrische Daten. Eingestuft und dokumentiert nach EU-KI-Verordnung.</p></div>
+      <div class="ucard reveal"><div class="ic">↺</div><h3>Immer aktuell</h3><p>Regelmäßiger Abgleich der NWB-Datenbestände. Es gelten stets die aktuellen Prüfungsordnungen der abgedeckten Prüfungen.</p></div>
+      <div class="ucard reveal"><div class="ic">♪</div><h3>Text & Sprache</h3><p>Tippen oder sprechen — der Bot versteht beides und antwortet multimodal, auch freihändig beim Lernen.</p></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat reveal"><b data-count="95" data-suffix=" %" data-prefix="&gt; ">&gt; 95 %</b><span>Quellenabdeckung der Antworten</span></div>
+      <div class="stat reveal"><b data-count="4">4</b><span>aufeinander abgestimmte Lernmodi</span></div>
+      <div class="stat reveal"><b data-count="3">3</b><span>KI-Prüfer für die mündliche Simulation</span></div>
+      <div class="stat reveal"><b>EU</b><span>Hosting &amp; Datenverarbeitung in der EU</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODES -->
+<section class="modes" id="modi">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">So begleitet dich der Bot</span>
+      <h2>Vier Modi — ein durchgehender Lernweg.</h2>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="0"><span class="tn">01</span> Fach-Tutor</button>
+      <button class="tab" data-tab="1"><span class="tn">02</span> Drill</button>
+      <button class="tab" data-tab="2"><span class="tn">03</span> Coach</button>
+      <button class="tab" data-tab="3"><span class="tn">04</span> Prüfungssimulation</button>
+    </div>
+
+    <div class="panel active" data-panel="0">
+      <div class="panel-text">
+        <span class="eyebrow">Verstehen</span>
+        <h3>Fach-Tutor</h3>
+        <p>Präzise, zitierfähige Antworten auf steuerrechtliche Fragen — verständlich erklärt, immer mit Fundstelle.</p>
+        <ul>
+          <li>Kurze Antwort auf den Punkt, mit Quellenangabe</li>
+          <li>Jede Antwort endet mit einer Kontrollfrage</li>
+          <li>Greift gezielt auf geprüfte NWB-Inhalte zu</li>
+        </ul>
+      </div>
+      <div class="panel-visual">
+        <div class="src-chip">NWB Datenbank · § 8 Abs. 3 S. 2 KStG</div>
+        <p class="mono" style="font-size:.82rem;color:#b7b2a1;">→ Antwort in 3 Sätzen<br>→ Fundstelle verlinkt<br>→ Kontrollfrage zum Mitdenken</p>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="1">
+      <div class="panel-text">
+        <span class="eyebrow">Üben</span>
+        <h3>Drill-Modus</h3>
+        <p>Prüfungsnahe Aufgaben, die sich automatisch an dein Niveau anpassen. Fehler werden analysiert, nicht gespeichert.</p>
+        <ul>
+          <li>Adaptives Quiz mit Fehleranalyse</li>
+          <li>Spaced Repetition &amp; Interleaving eingebaut</li>
+          <li>„Teste mich 10 Minuten zu Umsatzsteuerbefreiungen.“</li>
+        </ul>
+      </div>
+      <div class="panel-visual">
+        <p class="mono" style="font-size:.82rem;color:#b7b2a1;">Frage 3 / 10 · Umsatzsteuer</p>
+        <div style="background:var(--night-2);border:1px solid #322f22;border-radius:12px;padding:16px;">Welche Lieferung ist nach § 4 UStG steuerfrei?</div>
+        <p class="mono" style="font-size:.78rem;color:var(--yellow);">Schwierigkeit passt sich live an ↗</p>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="2">
+      <div class="panel-text">
+        <span class="eyebrow">Dranbleiben</span>
+        <h3>Coach</h3>
+        <p>Aus deiner verfügbaren Zeit wird ein realistischer Wochenplan. Der Coach erkennt Lernpausen und hilft über das Motivationsloch.</p>
+        <ul>
+          <li>„Ich habe 8 Stunden pro Woche.“ → fertiger Plan</li>
+          <li>Erinnerungen und Impulse per Chat</li>
+          <li>Wochenrückblick im Fehlerjournal</li>
+        </ul>
+      </div>
+      <div class="panel-visual">
+        <p class="mono" style="font-size:.82rem;color:#b7b2a1;">Dein Wochenplan</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="background:var(--yellow);color:var(--ink);border-radius:7px;padding:.3em .6em;font-size:.78rem;font-weight:700;">Mo · ESt</span>
+          <span style="background:var(--night-2);border:1px solid #322f22;border-radius:7px;padding:.3em .6em;font-size:.78rem;">Mi · USt</span>
+          <span style="background:var(--night-2);border:1px solid #322f22;border-radius:7px;padding:.3em .6em;font-size:.78rem;">Fr · Bilanz</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="3">
+      <div class="panel-text">
+        <span class="eyebrow">Ernstfall proben</span>
+        <h3>Prüfungssimulation</h3>
+        <p>Die mündliche Prüfung realistisch durchspielen — mit KI-Prüfern, die nachfragen, einordnen und Feedback geben. Die Königsklasse der Vorbereitung.</p>
+        <ul>
+          <li>Sprachbasierte Simulation mit Avatar-Prüfern</li>
+          <li>Drei Profile je nach Abschluss</li>
+          <li>Premium-Funktion im Stufenmodell</li>
+        </ul>
+      </div>
+      <div class="panel-visual">
+        <p class="mono" style="font-size:.82rem;color:#b7b2a1;">Live-Simulation</p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,var(--yellow),var(--yellow-deep));border:2px solid var(--paper);display:grid;place-items:center;font-weight:800;color:var(--ink);">W</span>
+          <span style="font-size:.9rem;">Prof.&nbsp;Dr.&nbsp;Bergmann stellt eine Anschlussfrage…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EINBLICKE / SCREENSHOTS -->
+<section id="einblicke">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Einblicke in den Prototyp</span>
+      <h2>So sieht der Bot heute aus.</h2>
+      <p>Echte Ansichten aus dem laufenden Prototyp. Stand der Entwicklung — Oberfläche und Funktionen ändern sich noch.</p>
+    </div>
+    <div class="gallery">
+      <figure class="shot reveal" style="margin:0;">
+        <div class="frame">
+          <img src="assets/screenshots/fach-tutor.png" alt="Fach-Tutor mit Quellenangabe" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="ph" style="display:flex;"><span class="badge">Screenshot</span><small>Lege <code>assets/screenshots/fach-tutor.png</code> ab</small></div>
+        </div>
+        <figcaption class="cap"><h3>Fach-Tutor</h3><p>Antwort mit Quellenkarte und Kontrollfrage.</p></figcaption>
+      </figure>
+      <figure class="shot reveal" style="margin:0;">
+        <div class="frame">
+          <img src="assets/screenshots/dashboard.png" alt="Lern- und Admin-Dashboard" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="ph" style="display:flex;"><span class="badge">Screenshot</span><small>Lege <code>assets/screenshots/dashboard.png</code> ab</small></div>
+        </div>
+        <figcaption class="cap"><h3>Dashboard</h3><p>Lernfortschritt, Schwerpunkte und Auswertung.</p></figcaption>
+      </figure>
+      <figure class="shot reveal" style="margin:0;">
+        <div class="frame">
+          <img src="assets/screenshots/simulation.png" alt="Prüfungssimulation mit Avatar-Prüfer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="ph" style="display:flex;"><span class="badge">Screenshot</span><small>Lege <code>assets/screenshots/simulation.png</code> ab</small></div>
+        </div>
+        <figcaption class="cap"><h3>Prüfungssimulation</h3><p>Mündliche Simulation mit KI-Prüfer.</p></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- PRÜFUNGSSIMULATION / AVATARS -->
+<section id="pruefung" style="background:var(--paper-2);">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Premium · Prüfungssimulation</span>
+      <h2>Drei Prüfer. Dein Ernstfall, vorab geübt.</h2>
+      <p>Je nach Abschluss übernimmt ein anderes KI-Prüferprofil die mündliche Simulation — mit passender Tonalität, Anschlussfragen und ehrlichem Feedback.</p>
+    </div>
+    <div class="exam-grid">
+      <div class="ex reveal">
+        <div class="face">M</div>
+        <h3>Frau Müller</h3>
+        <div class="role">Steuerfachangestellte</div>
+        <p>Klar und strukturiert. Prüft die Grundlagen sicher ab und gibt Orientierung im Einstieg.</p>
+      </div>
+      <div class="ex reveal">
+        <div class="face">W</div>
+        <h3>Dr. Wagner</h3>
+        <div class="role">Steuerfachwirt</div>
+        <p>Fordert Transferdenken. Verknüpft Themen und hakt bei der Begründung nach.</p>
+      </div>
+      <div class="ex reveal">
+        <div class="face">B</div>
+        <h3>Prof. Dr. Bergmann</h3>
+        <div class="role">Steuerberaterprüfung</div>
+        <p>Anspruchsvoll auf höchstem Niveau. Komplexe Fälle, präzise Nachfragen, echtes Prüfungsgefühl.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROGNOSE -->
+<section class="prog" id="prognose">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Adaptive Lernpfade</span>
+      <h2>Sieh, was ein Schwerpunkt bewegt.</h2>
+      <p style="color:#b7b2a1;">Der Bot wertet Ergebnisse, Fehler und Wiederholungen aus und zeigt, worauf es sich zu fokussieren lohnt. Wähle einen Schwerpunkt — der Wert ist beispielhaft.</p>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-controls">
+        <div class="q">Wenn ich diesen Schwerpunkt vertiefe …</div>
+        <div class="focus-btns" id="focusBtns">
+          <button class="fbtn active" data-p="74" data-t="Einkommensteuer">Einkommensteuer</button>
+          <button class="fbtn" data-p="69" data-t="Umsatzsteuer">Umsatzsteuer</button>
+          <button class="fbtn" data-p="81" data-t="Bilanzsteuerrecht">Bilanzsteuerrecht</button>
+          <button class="fbtn" data-p="66" data-t="Abgabenordnung">Abgabenordnung</button>
+        </div>
+      </div>
+      <div class="gauge">
+        <div class="big"><span id="pctNum">74</span>%</div>
+        <div class="ctx" id="pctCtx">geschätzte Bestehenswahrscheinlichkeit, wenn du <b>Einkommensteuer</b> vertiefst.</div>
+        <div class="bar"><i id="pctBar" style="width:74%"></i></div>
+        <small>Beispielhafte Prognose · Modell illustriert die Funktion</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ZIELGRUPPE -->
+<section id="zielgruppe">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Für wen</span>
+      <h2>Eine Technik, viele Abschlüsse.</h2>
+      <p>Der Bot kennt die jeweilige Prüfungsordnung und differenziert nach den Anforderungen der verschiedenen steuerlichen Prüfungen.</p>
+    </div>
+    <div class="aud reveal">
+      <span class="tag">NWB · Steuer</span>
+      <h3>Steuerliche Aus- &amp; Weiterbildung</h3>
+      <ul>
+        <li>Steuerfachangestellte</li>
+        <li>Fachassistent</li>
+        <li>Steuerfachwirt</li>
+        <li>Steuerberaterprüfung</li>
+        <li>Gehobener Dienst Finanzverwaltung</li>
+      </ul>
+      <p class="foot">Weil jede dieser Prüfungen anders abläuft, differenziert der Bot nach den jeweiligen Prüfungsbestandteilen und der gültigen Prüfungsordnung.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DIDAKTIK -->
+<section id="didaktik" style="background:var(--paper-2);">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Lernpsychologisch fundiert</span>
+      <h2>Methoden, die nachweislich wirken.</h2>
+    </div>
+    <div class="did-grid">
+      <div class="dcard reveal"><h3>Retrieval Practice</h3><p>Aktiv abrufen statt passiv wiederholen — jede Antwort endet mit einer Kontrollfrage.</p></div>
+      <div class="dcard reveal"><h3>Spaced Repetition</h3><p>Inhalte zeitlich verteilt wiederholen, damit Wissen langfristig sitzt.</p></div>
+      <div class="dcard reveal"><h3>Interleaving</h3><p>Themen bewusst mischen, statt stur in Blöcken zu lernen.</p></div>
+      <div class="dcard reveal"><h3>Fehlerjournal</h3><p>Wissensstand reflektieren und Fortschritte sichtbar machen.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section id="sicherheit" style="padding-left:0;padding-right:0;">
+  <div class="trust">
+    <div class="trust-inner">
+      <div>
+        <span class="eyebrow">Datenschutz & Compliance</span>
+        <h2 style="margin-top:1rem;">Vertrauen ist eingebaut.</h2>
+        <p style="color:#b7b2a1;margin-top:1rem;">Keine erfundenen Fundstellen, keine biometrischen Daten, Hosting in der EU. Nutzung ausschließlich in lizenzierten NWB-Umgebungen.</p>
+      </div>
+      <div class="badges">
+        <div class="badge"><b>EU-Hosting</b><span>DSGVO-konforme Cloud, durchgehend verschlüsselt.</span></div>
+        <div class="badge"><b>EU-KI-Verordnung</b><span>Als Hochrisikoanwendung eingestuft und dokumentiert.</span></div>
+        <div class="badge"><b>Quellenpflicht</b><span>Jede Antwort ist an eine belegbare Fundstelle gebunden.</span></div>
+        <div class="badge"><b>Keine Musterlösungen</b><span>Zu aktiven Prüfungen werden keine Lösungen ausgegeben.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final">
+  <div class="wrap">
+    <div class="final-box reveal">
+      <h2>Geh vorbereitet in deine Prüfung.</h2>
+      <p>Stell deine erste Frage und erlebe, wie sich belegbares Lernen anfühlt.</p>
+      <a href="https://nwb-ki-bot.vercel.app" target="_blank" rel="noopener" class="btn btn-primary">Prototyp öffnen <span class="arr">→</span></a>
+      <div class="smallnote">Aktueller Entwicklungsstand: Prototyp · Login erforderlich</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <div class="brand"><img src="assets/nwb-logo.svg" alt="NWB" style="height:28px;"/><span class="sub" style="font-weight:700;">KI Bildungs-Bot</span></div>
+        <p>Prototyp eines digitalen, KI-gestützten Lernbegleiters für die steuerrechtliche Aus- und Weiterbildung.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Produkt</h4>
+          <a href="#modi">Die vier Modi</a>
+          <a href="#einblicke">Einblicke</a>
+          <a href="#pruefung">Prüfungssimulation</a>
+          <a href="#prognose">Lernpfade</a>
+        </div>
+        <div class="foot-col">
+          <h4>Für wen</h4>
+          <a href="#zielgruppe">Steuerberufe</a>
+          <a href="#didaktik">Didaktik</a>
+        </div>
+        <div class="foot-col">
+          <h4>Vertrauen</h4>
+          <a href="#sicherheit">Datenschutz</a>
+          <a href="#sicherheit">EU-KI-Verordnung</a>
+          <a href="#sicherheit">Quellenpflicht</a>
+        </div>
+      </div>
+    </div>
+    <div class="legal">
+      <span>© NWB Verlag · KI Bildungs-Bot (Prototyp)</span>
+      <span class="mono">Antworten illustrativ · Hosting EU · DSGVO-konform</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var hdr = document.getElementById('hdr');
+  window.addEventListener('scroll', function(){ hdr.classList.toggle('scrolled', window.scrollY > 8); });
+
+  var mt = document.getElementById('mt'), nl = document.getElementById('navlinks');
+  mt.addEventListener('click', function(){ nl.classList.toggle('open'); });
+  nl.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',function(){ nl.classList.remove('open'); }); });
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        e.target.querySelectorAll('[data-mark]').forEach(function(m){ m.classList.add('lit'); });
+        if(e.target.hasAttribute('data-mark')) e.target.classList.add('lit');
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold:0.18});
+  document.querySelectorAll('.reveal, [data-mark]').forEach(function(el){ io.observe(el); });
+
+  var co = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var el = e.target, target = +el.getAttribute('data-count');
+        var pre = el.getAttribute('data-prefix')||'', suf = el.getAttribute('data-suffix')||'';
+        if(reduce){ el.innerHTML = pre+target+suf; co.unobserve(el); return; }
+        var n=0, step = Math.max(1, Math.round(target/28));
+        var t = setInterval(function(){
+          n += step; if(n>=target){ n=target; clearInterval(t); }
+          el.innerHTML = pre+n+suf;
+        }, 28);
+        co.unobserve(el);
+      }
+    });
+  }, {threshold:0.6});
+  document.querySelectorAll('[data-count]').forEach(function(el){ co.observe(el); });
+
+  /* LIVE DEMO */
+  var QA = [
+    {
+      q:"Wie wird eine verdeckte Gewinnausschüttung bewertet?",
+      a:"Eine verdeckte Gewinnausschüttung (vGA) mindert das Einkommen der Kapitalgesellschaft nicht. Der zu Unrecht abgezogene Betrag wird dem Einkommen außerbilanziell wieder hinzugerechnet. Auf Gesellschafterebene führt sie zu Kapitaleinkünften.\n\nKontrollfrage: Welche Voraussetzungen muss eine Vermögensminderung erfüllen, um als vGA zu gelten?",
+      src:["NWB Datenbank · § 8 Abs. 3 S. 2 KStG","NWB Online-Kommentar · vGA"]
+    },
+    {
+      q:"Wann ist eine Lieferung nach § 4 UStG steuerfrei?",
+      a:"§ 4 UStG zählt die Steuerbefreiungen abschließend auf — etwa innergemeinschaftliche Lieferungen oder Ausfuhrlieferungen. Maßgeblich ist, dass die jeweiligen Tatbestandsvoraussetzungen und Nachweispflichten erfüllt sind.\n\nKontrollfrage: Worin unterscheidet sich eine echte von einer unechten Steuerbefreiung beim Vorsteuerabzug?",
+      src:["NWB Datenbank · § 4 UStG","Steuerfachkurs · Umsatzsteuer"]
+    },
+    {
+      q:"Was bedeutet das Maßgeblichkeitsprinzip?",
+      a:"Das Maßgeblichkeitsprinzip bindet die Steuerbilanz grundsätzlich an die Handelsbilanz: Was handelsrechtlich angesetzt ist, gilt auch steuerlich — soweit keine eigenständige steuerliche Regelung etwas anderes bestimmt.\n\nKontrollfrage: In welchen Fällen wird die Maßgeblichkeit durchbrochen?",
+      src:["NWB Datenbank · § 5 Abs. 1 EStG","NWB Online-Kommentar · Maßgeblichkeit"]
+    }
+  ];
+
+  var chips = document.getElementById('chips');
+  var stream = document.getElementById('stream');
+  var busy = false;
+
+  QA.forEach(function(item, i){
+    var c = document.createElement('button');
+    c.className = 'chip'; c.type='button'; c.textContent = item.q;
+    c.addEventListener('click', function(){ if(!busy) runQA(i, c); });
+    chips.appendChild(c);
+  });
+
+  function el(cls, html){ var d=document.createElement('div'); d.className=cls; if(html!==undefined) d.innerHTML=html; return d; }
+
+  function runQA(i, chipEl){
+    busy = true;
+    document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    chipEl.classList.add('active');
+    stream.innerHTML = '';
+    var item = QA[i];
+    var q = el('bubble-q'); q.textContent = item.q; stream.appendChild(q);
+    var a = el('bubble-a');
+    a.appendChild(el('typing','<i></i><i></i><i></i>'));
+    stream.appendChild(a);
+    var delay = reduce ? 250 : 750;
+    setTimeout(function(){
+      a.innerHTML='';
+      var ans = el('ans'); a.appendChild(ans);
+      typeText(ans, item.a, function(){
+        var src = el('source');
+        src.appendChild(el('lbl','Fundstelle'));
+        item.src.forEach(function(s){ var sc = el('src-chip'); sc.textContent = s; src.appendChild(sc); });
+        a.appendChild(src);
+        busy = false;
+      });
+    }, delay);
+  }
+
+  function typeText(node, text, done){
+    if(reduce){ node.textContent = text; done(); return; }
+    var idx=0;
+    function tick(){
+      idx += 3; node.textContent = text.slice(0, idx); stream.scrollTop = stream.scrollHeight;
+      if(idx < text.length){ setTimeout(tick, 12); } else { node.textContent = text; done(); }
+    }
+    tick();
+  }
+
+  var demoSeen = false;
+  var dio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting && !demoSeen){
+        demoSeen = true;
+        setTimeout(function(){ if(!busy) runQA(0, chips.children[0]); }, 600);
+        dio.disconnect();
+      }
+    });
+  }, {threshold:0.4});
+  dio.observe(document.getElementById('start'));
+
+  /* TABS */
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      var idx = t.getAttribute('data-tab');
+      tabs.forEach(function(x){ x.classList.remove('active'); });
+      t.classList.add('active');
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-panel')===idx); });
+    });
+  });
+
+  /* PROGNOSE */
+  var fbtns = document.querySelectorAll('.fbtn');
+  var pctNum = document.getElementById('pctNum'), pctBar = document.getElementById('pctBar'), pctCtx = document.getElementById('pctCtx');
+  fbtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      fbtns.forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var target = +b.getAttribute('data-p'), topic = b.getAttribute('data-t');
+      pctBar.style.width = target+'%';
+      pctCtx.innerHTML = 'geschätzte Bestehenswahrscheinlichkeit, wenn du <b>'+topic+'</b> vertiefst.';
+      if(reduce){ pctNum.textContent = target; return; }
+      var cur = +pctNum.textContent, dir = target>cur?1:-1;
+      var t = setInterval(function(){ cur += dir; pctNum.textContent = cur; if(cur===target) clearInterval(t); }, 22);
+    });
+  });
+})();
+</script>
+</body>
+</html>
