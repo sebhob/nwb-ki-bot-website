@@ -37,12 +37,15 @@ ist der beste Weg, beides in DAS Vercel-Projekt des Bots zu legen:
 - den bisherigen Bot auf die Route `/bot` verschieben
 Dann teilst du `…/` für die Landingpage und `…/bot` für den Bot – ohne Weiterleitung.
 
-## Logo austauschen
-`assets/nwb-logo.svg` ist eine nachgebaute Fassung des NWB-Wortzeichens (Kleinbuchstaben „nwb" auf
-NWB-Gelb). Das offizielle, frei lizenzierte Original-SVG liegt bei Wikimedia Commons
-(File:NWB-Verlag-Logo.svg, gemeinfreies Text-Logo): dort „Originaldatei" herunterladen und
-`assets/nwb-logo.svg` damit ersetzen (gleicher Dateiname genügt). Alternativ die Vektordatei aus
-dem NWB-Brandportal verwenden.
+## Logo
+`assets/nwb-logo.svg` ist DEIN Logo-Slot. Lade dort das offizielle NWB-Logo hoch (gleicher
+Dateiname `nwb-logo.svg`). Diese Datei ist NICHT Teil der ZIPs — sie wird beim Hochladen der
+Website-Updates also nie überschrieben. Falls `nwb-logo.svg` fehlt, zeigt die Seite automatisch
+das mitgelieferte Platzhalter-Logo `assets/nwb-logo-fallback.svg`.
+
+Das offizielle, frei lizenzierte Original-SVG liegt bei Wikimedia Commons (File:NWB-Verlag-Logo.svg):
+„Originaldatei" herunterladen, in `nwb-logo.svg` umbenennen, nach `assets/` hochladen.
+
 
 ## Screenshots einfügen
 PNGs (~1200 px breit, 16:10) unter `assets/screenshots/` ablegen:
